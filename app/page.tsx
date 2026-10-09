@@ -6,12 +6,8 @@ import {
   Check,
   ChevronRight,
   CircleAlert,
-  Copy,
-  ExternalLink,
-  RefreshCw,
   RotateCcw,
   SendHorizontal,
-  Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,36 +20,27 @@ import { cn } from "@/lib/utils";
 type Step = { tool: string; args: unknown; result: any; error?: boolean };
 type Message = { role: "user" | "agent"; text: string; steps?: Step[]; error?: boolean };
 type Status = { hasApiKey: boolean; model: string; tools: { name: string; description: string }[] };
-type WalletInfo = { address: string | null; balance?: string };
 
-const EXAMPLES = ["What's the weather in Mumbai?", "What's in your wallet?", "Roll a 20 sided dice"];
+const EXAMPLES = [
+  "Bugün toplantıya geç kaldım çünkü trafik çoktu.",
+  "I need improve my english for work.",
+  "Bu kelimelerle alıştırma ver: deadline, improve, feedback",
+];
 
 export default function Home() {
   const [status, setStatus] = useState<Status | null>(null);
-  const [wallet, setWallet] = useState<WalletInfo | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
-  const [creating, setCreating] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  const loadWallet = () => fetch("/api/wallet").then((r) => r.json()).then(setWallet);
 
   useEffect(() => {
     fetch("/api/agent").then((r) => r.json()).then(setStatus);
-    loadWallet();
   }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinking]);
-
-  async function createWallet() {
-    setCreating(true);
-    await fetch("/api/wallet", { method: "POST" });
-    await loadWallet();
-    setCreating(false);
-  }
 
   async function send(text: string) {
     if (!text.trim() || thinking) return;
@@ -70,9 +57,11 @@ export default function Home() {
       });
       const data = await res.json();
       setMessages((m) => [...m, data.error ? { role: "agent", text: data.error, error: true } : { role: "agent", text: data.answer, steps: data.steps }]);
-      if (data.steps?.some((s: Step) => s.result?.payment)) loadWallet();
     } catch {
-      setMessages((m) => [...m, { role: "agent", text: "Could not reach the server. Is `npm run dev` still running?", error: true }]);
+      setMessages((m) => [
+        ...m,
+        { role: "agent", text: "Sunucuya ulaşılamadı. `npm run dev` hâlâ çalışıyor mu?", error: true },
+      ]);
     }
     setThinking(false);
   }
@@ -81,64 +70,53 @@ export default function Home() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-[1520px] flex-col gap-10 px-4 py-8 md:px-12 md:py-12">
-      {/* Header */}
       <header className="flex flex-col gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Label>
             <img src="/risein-logo.svg" alt="Rise In" className="mr-3 h-5 w-auto" />
-            <span className="text-foreground">/ Agentmaxxing</span>&nbsp;starter kit
+            <span className="text-foreground">/ İngilizce öğretmeni</span>
           </Label>
           {status && <Label>Model: {status.model}</Label>}
         </div>
         <h1 className="text-5xl leading-[0.9] font-bold tracking-[-0.045em] uppercase md:text-7xl">
-          Agentic <span className="text-primary">starter.</span>
+          Düzelt. Çevir. <span className="text-primary">Öğret.</span>
         </h1>
         <p className="max-w-xl text-lg text-muted-foreground">
-          An AI agent that uses your tools and pays for APIs with its own wallet.
+          Resmi Türkçe konuşan öğretmen: yazını düzeltir, İngilizcesini verir ve kelimelerinden anlık ders çıkarır.
         </p>
       </header>
 
       <div className="grid flex-1 gap-6 lg:grid-cols-[380px_1fr]">
-        {/* Left: setup + tools */}
         <aside className="flex flex-col gap-6">
           <Card>
             <CardHeader>
-              <SectionTitle num="01" title="Setup" />
+              <SectionTitle num="01" title="Kurulum" />
             </CardHeader>
             <CardContent className="flex flex-col">
-              <SetupStep number={1} title="Add your Gemini API key" done={ready}>
+              <SetupStep number={1} title="Gemini API anahtarı" done={ready}>
                 {status && !ready && (
                   <p className="text-muted-foreground">
-                    Paste it into <Code>.env</Code> as <Code>GEMINI_API_KEY</Code>, then restart <Code>npm run dev</Code>.{" "}
+                    <Code>.env</Code> dosyasına <Code>GEMINI_API_KEY</Code> ekleyin, ardından{" "}
+                    <Code>npm run dev</Code> yeniden başlatın.{" "}
                     <a className="text-primary underline underline-offset-4" href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">
-                      Get a free key
+                      Ücretsiz anahtar alın
                     </a>
                   </p>
                 )}
-                {ready && <p className="text-muted-foreground">Connected.</p>}
+                {ready && <p className="text-muted-foreground">Bağlandı.</p>}
               </SetupStep>
 
-              <SetupStep number={2} title="Create the agent wallet" done={Boolean(wallet?.address)}>
-                {wallet && !wallet.address && (
-                  <div className="flex flex-col gap-3">
-                    <p className="text-muted-foreground">The agent signs payments with this wallet to use paid APIs.</p>
-                    <Button onClick={createWallet} disabled={creating} className="w-fit font-mono tracking-wider uppercase">
-                      <Wallet /> {creating ? "Creating..." : "Create wallet"}
-                    </Button>
-                  </div>
-                )}
-                {wallet?.address && <WalletDetails wallet={wallet} onRefresh={loadWallet} />}
-              </SetupStep>
-
-              <SetupStep number={3} title="Chat with your agent" done={messages.some((m) => m.role === "agent" && !m.error)} last>
-                <p className="text-muted-foreground">Pick an example prompt, or ask anything.</p>
+              <SetupStep number={2} title="Bir metin yazın" done={messages.some((m) => m.role === "user")} last>
+                <p className="text-muted-foreground">
+                  Türkçe veya İngilizce yazın. Agent düzeltir, çevirir ve kelimelerinizden ders çıkarır.
+                </p>
               </SetupStep>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <SectionTitle num="02" title="Tools" />
+              <SectionTitle num="02" title="Araçlar" />
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               {status?.tools.map((t) => (
@@ -150,19 +128,18 @@ export default function Home() {
                 </div>
               ))}
               <p className="border-t pt-4 text-muted-foreground">
-                Add your own in <Code>agent/tools.ts</Code>. Save, and it shows up here.
+                Yeni araç eklemek için <Code>agent/tools.ts</Code> dosyasını düzenleyin.
               </p>
             </CardContent>
           </Card>
         </aside>
 
-        {/* Right: chat */}
         <Card className="flex h-[calc(100vh-4rem)] min-h-[560px] flex-col lg:sticky lg:top-8">
           <CardHeader className="border-b">
-            <SectionTitle num="03" title="Chat" />
+            <SectionTitle num="03" title="Sohbet" />
             <CardAction>
               <Button variant="ghost" size="sm" className="font-mono uppercase" onClick={() => setMessages([])} disabled={messages.length === 0 || thinking}>
-                <RotateCcw /> Clear
+                <RotateCcw /> Temizle
               </Button>
             </CardAction>
           </CardHeader>
@@ -175,19 +152,15 @@ export default function Home() {
                     <Bot className="size-6" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold tracking-tight uppercase">Ask your agent something</p>
+                    <p className="text-2xl font-bold tracking-tight uppercase">Bir cümle yazın</p>
                     <p className="mt-1 text-muted-foreground">
-                      {!ready
-                        ? "Add your Gemini API key to start."
-                        : wallet && !wallet.address
-                          ? "Tip: create a wallet first so the agent can pay for the weather API."
-                          : "Pick an example to start."}
+                      {!ready ? "Başlamak için Gemini API anahtarınızı ekleyin." : "Örneklerden birini seçin veya kendi metninizi yazın."}
                     </p>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
                     {EXAMPLES.map((e) => (
-                      <Button key={e} variant="outline" onClick={() => send(e)} disabled={!ready} className="font-mono">
-                        <span className="text-primary">&gt;</span> {e}
+                      <Button key={e} variant="outline" onClick={() => send(e)} disabled={!ready} className="font-mono text-left h-auto py-2 whitespace-normal max-w-xs">
+                        <span className="text-primary shrink-0">&gt;</span> {e}
                       </Button>
                     ))}
                   </div>
@@ -217,7 +190,7 @@ export default function Home() {
 
               {thinking && (
                 <p className="flex items-center gap-2 font-mono text-sm text-muted-foreground">
-                  agent is thinking <span className="inline-block h-4 w-2 animate-pulse bg-primary" />
+                  öğretmen düşünüyor <span className="inline-block h-4 w-2 animate-pulse bg-primary" />
                 </p>
               )}
               <div ref={bottomRef} />
@@ -233,11 +206,11 @@ export default function Home() {
               }}
             >
               <div className={cn("flex flex-1 items-center border border-input bg-background focus-within:border-primary", !ready && "opacity-50")}>
-                <span className="pl-3 font-mono text-base whitespace-nowrap text-muted-foreground md:text-sm">~/agent $</span>
+                <span className="pl-3 font-mono text-base whitespace-nowrap text-muted-foreground md:text-sm">~/tutor $</span>
                 <Input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={ready ? "ask your agent something..." : "add your Gemini API key to start"}
+                  placeholder={ready ? "Türkçe veya İngilizce bir metin yazın..." : "önce Gemini API anahtarını ekleyin"}
                   disabled={!ready}
                   className="h-11 border-0 bg-transparent font-mono focus-visible:ring-0 disabled:bg-transparent disabled:opacity-100 dark:bg-transparent dark:disabled:bg-transparent"
                 />
@@ -292,54 +265,13 @@ function SetupStep(props: { number: number; title: string; done: boolean; last?:
   );
 }
 
-function WalletDetails({ wallet, onRefresh }: { wallet: WalletInfo; onRefresh: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const address = wallet.address!;
-
-  function copy() {
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }
-
-  return (
-    <div className="flex flex-col gap-3 border bg-background p-3">
-      <div className="flex items-center justify-between gap-2">
-        <code className="truncate font-mono text-xs text-primary">{address}</code>
-        <Button variant="ghost" size="icon-xs" onClick={copy} aria-label="Copy address">
-          {copied ? <Check /> : <Copy />}
-        </Button>
-      </div>
-      <div className="flex items-center justify-between font-mono text-xs text-muted-foreground uppercase">
-        <span>
-          Balance <span className="text-foreground">{wallet.balance}</span>
-        </span>
-        <Button variant="ghost" size="icon-xs" onClick={onRefresh} aria-label="Refresh balance">
-          <RefreshCw />
-        </Button>
-      </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 border-t pt-3 font-mono text-xs uppercase">
-        <a className="inline-flex items-center gap-1 hover:text-primary" href={`https://sepolia.basescan.org/address/${address}`} target="_blank" rel="noreferrer">
-          Explorer <ExternalLink className="size-3" />
-        </a>
-        <a className="inline-flex items-center gap-1 hover:text-primary" href="https://docs.base.org/base-chain/tools/network-faucets" target="_blank" rel="noreferrer">
-          Get test ETH <ExternalLink className="size-3" />
-        </a>
-      </div>
-      <p className="text-xs text-muted-foreground">Base Sepolia testnet. Saved in .agent-wallet.json.</p>
-    </div>
-  );
-}
-
 function ToolCall({ step }: { step: Step }) {
-  const payment = step.result?.payment;
   return (
     <Collapsible className="border font-mono text-xs">
       <CollapsibleTrigger className="group flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted">
         <ChevronRight className="size-3.5 transition-transform group-data-[panel-open]:rotate-90" />
         <span className="text-muted-foreground uppercase">Tool</span>
         <span className="text-primary">{step.tool}</span>
-        {payment && <Badge className="ml-auto bg-blue font-mono text-foreground uppercase">Paid {payment.amount}</Badge>}
         {step.error && <Badge variant="destructive" className="ml-auto font-mono uppercase">Failed</Badge>}
       </CollapsibleTrigger>
       <CollapsibleContent className="flex flex-col gap-2 border-t px-3 py-2">

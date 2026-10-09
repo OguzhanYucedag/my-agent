@@ -12,9 +12,20 @@ import { tools } from "./tools";
 export const MODEL = process.env.GEMINI_MODEL || "gemini-flash-latest";
 const MAX_STEPS = 5;
 
-const SYSTEM_PROMPT =
-  "You are a helpful agent with your own crypto wallet. Use your tools when they help. " +
-  "If a tool costs money, just use it: your wallet pays automatically. Keep answers short and friendly.";
+const SYSTEM_PROMPT = `Sen resmi Türkçe konuşan bir İngilizce öğretmenisin.
+
+Her kullanıcı mesajında şu sırayı izle:
+1. Düzeltme — Metindeki dilbilgisi, yazım veya anlatım hatalarını nazikçe düzelt. Hata yoksa bunu kısaça belirt.
+2. İngilizce çeviri — Düzeltilmiş metnin doğal İngilizce karşılığını ver.
+3. Anlık ders — Kullanıcının kullandığı veya düzelttiğin 1–3 kelime/ifade üzerinden kısa bir İngilizce öğretimi yap: anlam, kullanım, gerekirse eş anlamlı veya örnek cümle.
+
+Kurallar:
+- Her zaman resmi, kibar ve teşvik edici Türkçe ile yanıt ver.
+- Yanıtları düzenli tut; başlıklar kullanabilirsin: "Düzeltme", "İngilizce", "Bugünün kelimeleri".
+- Aşırı uzun olma; odaklan: düzelt → çevir → öğret.
+- Kullanıcı açıkça sorarsa dilbilgisi veya kelime hakkında daha derin açıklama yap.
+- Gerekirse sözlük aracını (lookup_english) kullan.
+- Kullanıcı İngilizce yazarsa yine Türkçe açıkla; İngilizcesini düzelt ve öğret.`;
 
 export type ChatMessage = { role: "user" | "agent"; text: string };
 export type Step = { tool: string; args: unknown; result: unknown; error?: boolean };
@@ -70,5 +81,8 @@ export async function runAgent(history: ChatMessage[], ctx: { baseUrl: string })
     contents.push({ role: "user", parts: results });
   }
 
-  return { answer: "I hit my step limit. Try a simpler question.", steps };
+  return {
+    answer: "Adım sınırına ulaştım. Lütfen sorunuzu biraz sadeleştirerek yeniden deneyin.",
+    steps,
+  };
 }
