@@ -1,75 +1,96 @@
-# agentmaxxin
+# İngilizce Öğretmeni Agent
 
-A minimal Next.js template for building AI agents that call tools and pay for services with their own crypto wallet. The agent is powered by Google Gemini.
+Resmi Türkçe konuşan bir AI İngilizce öğretmeni. Yazını düzeltir, İngilizce çevirisini verir ve kullandığın kelimelerden anlık ders çıkarır.
 
-The template is intentionally small. You will spend almost all of your time in a single file, `agent/tools.ts`, where each tool is a plain TypeScript function that the agent can decide to call.
+Proje, Rise In **agentmaxxin** şablonundan türetilmiştir; crypto/wallet demosu yerine dil öğrenme agent’ına dönüştürülmüştür.
 
-## What You Get
+## Ne yapar?
 
-1. A working agent loop that sends your message to Gemini, runs any tools Gemini asks for, and returns the final answer.
-2. A tools file where you add, remove, or change the functions your agent can use.
-3. An agent wallet that can sign payments, based on the x402 payment pattern.
-4. A mock paid weather API that refuses requests until the agent pays for them.
-5. A single page interface with guided setup, a one click wallet button, and a chat that shows every tool call and payment.
+Her kullanıcı mesajında agent şu sırayı izler:
 
-## Prerequisites
+1. **Düzeltme** — Dilbilgisi, yazım ve anlatım hatalarını nazikçe düzeltir.
+2. **İngilizce çeviri** — Düzeltilmiş metnin doğal İngilizce karşılığını verir.
+3. **Anlık ders** — 1–3 kelime/ifade üzerinden anlam, kullanım ve örnek cümle öğretir.
 
-1. Node.js version 20 or newer. Check with `node -v`.
-2. A free Gemini API key from [Google AI Studio](https://aistudio.google.com/apikey).
+Gerekirse sözlük veya alıştırma araçlarını kendi çağırır.
 
-## Getting Started
+## Kullanılan teknolojiler
 
-### Step 1. Create your project
+| Teknoloji | Ne için |
+| :--- | :--- |
+| [Next.js](https://nextjs.org) 16 | Uygulama ve API route’ları |
+| [React](https://react.dev) 19 | Arayüz |
+| [TypeScript](https://www.typescriptlang.org) | Tip güvenli kod |
+| [Google Gemini](https://aistudio.google.com) (`@google/genai`) | Agent modeli ve tool calling |
+| [Tailwind CSS](https://tailwindcss.com) 4 | Stil |
+| [shadcn/ui](https://ui.shadcn.com) | Buton, kart, input vb. UI bileşenleri |
+| [lucide-react](https://lucide.dev) | İkonlar |
+| [Free Dictionary API](https://dictionaryapi.dev) | `lookup_english` tool’u için kelime bakma |
+| [viem](https://viem.sh) | Şablondan kalan cüzdan altyapısı (şu an aktif kullanılmıyor) |
 
-Run the following command in your terminal. Replace `my-agent` with any folder name you like.
+## Gereksinimler
 
-```bash
-npx agentmaxxin my-agent
-```
+1. **Node.js 20+** — `node -v` ile kontrol et.
+2. **Gemini API anahtarı** — [Google AI Studio](https://aistudio.google.com/apikey) üzerinden ücretsiz alınır.
 
-This copies the template into a new folder, creates a `.env` file for you, and installs all packages.
+## Kurulum
 
-### Step 2. Move into the project folder
+### 1. Bağımlılıkları yükle
 
 ```bash
 cd my-agent
+npm install
 ```
 
-### Step 3. Add your Gemini API key
+### 2. Ortam değişkenlerini ayarla
 
-Open the `.env` file in the project root and paste your key after the equals sign:
+Proje kökünde `.env` dosyasını oluştur (veya `.env.example` dosyasını kopyala):
+
+```bash
+cp .env.example .env
+```
+
+`.env` içine anahtarını yaz:
 
 ```bash
 GEMINI_API_KEY=your_key_here
+
+# İsteğe bağlı — varsayılan: gemini-flash-latest
+GEMINI_MODEL=gemini-flash-latest
 ```
 
-Save the file. The key stays on your machine and is never committed to git.
+Anahtar makinede kalır; git’e commit edilmez.
 
-### Step 4. Start the app
+### 3. Uygulamayı başlat
 
 ```bash
 npm run dev
 ```
 
-### Step 5. Create the agent wallet
+Tarayıcıda aç: [http://localhost:3000](http://localhost:3000)
 
-Open [http://localhost:3000](http://localhost:3000) in your browser. The Setup panel on the left walks you through everything.
+Port 3000 doluysa Next.js otomatik olarak 3001’e geçebilir; terminaldeki `Local:` adresini kullan.
 
-Click **Create wallet**. The agent now has its own wallet, which it uses to sign payments for paid APIs. The wallet is saved in `.agent-wallet.json` in your project folder, so it stays the same after a restart.
+### 4. Agent ile konuş
 
-### Step 6. Talk to your agent
+Örnek prompt’lar:
 
-Try one of these prompts:
+1. `Bugün toplantıya geç kaldım çünkü trafik çoktu.`
+2. `I need improve my english for work.`
+3. `Bu kelimelerle alıştırma ver: deadline, improve, feedback`
 
-1. `What's the weather in Mumbai?` The agent calls the paid weather API and pays for it with its wallet.
-2. `What's in your wallet?` The agent reads its own wallet address and balance.
-3. `Roll a 20 sided dice` The agent calls a simple tool with no wallet involved.
+Cevabın üstündeki tool satırlarına tıklayarak agent’ın ne çağırdığını görebilirsin. **Temizle** ile sohbeti sıfırlarsın.
 
-Click any tool entry above a reply to see exactly what the agent sent and received. The agent remembers the conversation, so you can ask follow up questions. Use **Clear** to start over.
+## Proje içeriği
 
-### Step 7. Build your own tool
+### Agent araçları (`agent/tools.ts`)
 
-Open `agent/tools.ts` and add a new object to the `tools` list. For example:
+| Tool | Açıklama |
+| :--- | :--- |
+| `lookup_english` | İngilizce kelimeyi sözlükten bakar: anlam, telaffuz, örnek, eş anlamlılar |
+| `practice_prompt` | Verilen kelimelerle kısa alıştırma (boşluk doldurma, yeniden yazma, konuşma) üretir |
+
+Yeni tool eklemek için bu dosyaya bir obje eklemen yeterlidir:
 
 ```ts
 {
@@ -83,111 +104,69 @@ Open `agent/tools.ts` and add a new object to the `tools` list. For example:
 },
 ```
 
-Save the file and refresh the page. Your new tool appears in the Tools panel. Now ask your agent to tell you a joke.
+### Agent döngüsü (`agent/agent.ts`)
 
-## Writing Good Tools
+1. Mesaj + tool listesi Gemini’ye gider.
+2. Gemini tool isterse ilgili `run` çalışır, sonuç geri gönderilir.
+3. Metin cevabı gelene kadar tekrarlanır (en fazla 5 adım).
+4. System prompt: resmi Türkçe konuşan İngilizce öğretmeni.
 
-Every tool has four parts.
+### Arayüz (`app/page.tsx`)
 
-| Field | Purpose |
+Tek sayfa:
+
+- **Kurulum** — Gemini API anahtarı durumu
+- **Araçlar** — Aktif tool listesi
+- **Sohbet** — Mesajlaşma, tool adımları, örnek prompt’lar
+
+## Proje yapısı
+
+| Yol | Açıklama |
 | :--- | :--- |
-| `name` | A unique identifier in snake case, such as `get_weather`. |
-| `description` | Plain English explaining what the tool does. Gemini reads this to decide when to use it, so be clear and specific. |
-| `parameters` | A JSON Schema describing the inputs. Gemini fills in these values for you. |
-| `run` | The function that does the work. Whatever it returns is sent back to Gemini. |
+| `agent/agent.ts` | Gemini agent döngüsü ve system prompt |
+| `agent/tools.ts` | Agent’ın çağırdığı tool’lar (asıl düzenleme yeri) |
+| `agent/wallet.ts` | Şablondan kalan x402 cüzdan mantığı (şu an kullanılmıyor) |
+| `app/page.tsx` | Ana arayüz: kurulum, tool listesi, sohbet |
+| `app/layout.tsx` | Fontlar, tema, sayfa iskeleti |
+| `app/globals.css` | Global stiller |
+| `app/api/agent/route.ts` | Agent’ı çalıştıran API (`GET` durum, `POST` sohbet) |
+| `app/api/wallet/route.ts` | Eski cüzdan API’si (pasif) |
+| `app/api/weather/route.ts` | Eski sahte ücretli hava API’si / x402 demosu (pasif) |
+| `components/ui/` | shadcn/ui bileşenleri |
+| `lib/utils.ts` | `cn()` yardımcı fonksiyonu |
+| `.env` | API anahtarı ve isteğe bağlı ayarlar |
 
-A few guidelines:
+## Yapılandırma
 
-1. Return plain objects, for example `{ temperature: 28 }`, rather than strings or class instances.
-2. Keep each tool focused on one job. Several small tools work better than one large tool.
-3. If something can fail, let it throw. The agent loop catches the error and reports it back to Gemini, which can then explain the problem or try again.
+| Değişken | Zorunlu | Açıklama |
+| :--- | :---: | :--- |
+| `GEMINI_API_KEY` | Evet | Google Gemini API anahtarı |
+| `GEMINI_MODEL` | Hayır | Model adı; varsayılan `gemini-flash-latest` |
+| `WALLET_PRIVATE_KEY` | Hayır | Eski wallet demosu için; dil öğretmeni bunu kullanmaz |
 
-## How It Works
+`.env` değişince `npm run dev`’i yeniden başlat.
 
-### The agent loop
+## Nasıl çalışır?
 
-The loop lives in `agent/agent.ts`.
+```
+Sen yazıyorsun (app/page.tsx)
+    → POST /api/agent
+        → runAgent (agent/agent.ts)
+            → Gemini (+ system prompt + tools)
+            → gerekirse lookup_english / practice_prompt
+        ← cevap + tool adımları
+    ← sohbette görünür
+```
 
-1. Your message and the list of tools are sent to Gemini.
-2. If Gemini replies with a tool call, the matching `run` function is executed and its result is sent back to Gemini.
-3. This repeats until Gemini replies with plain text, which becomes the final answer.
-4. The loop stops after five rounds to prevent runaway tool calls.
+## Sorun giderme
 
-### Paying for an API
-
-The weather tool demonstrates the x402 pattern, where an agent pays for an API one request at a time.
-
-1. The agent requests `/api/weather`.
-2. The API responds with status `402 Payment Required` along with a price, an asset, and a recipient address.
-3. The agent wallet signs a payment message for that amount.
-4. The agent repeats the request with the signed payment in an `X-PAYMENT` header.
-5. The API verifies the signature and responds with status `200 OK` and the weather data.
-
-All of this is handled by the `payAndFetch` helper in `agent/wallet.ts`. Any tool that calls a paid API can use the same helper.
-
-Payments in this template are cryptographically signed but are not submitted to a blockchain, so no real funds are ever moved.
-
-## Project Structure
-
-| Path | Description |
+| Sorun | Çözüm |
 | :--- | :--- |
-| `agent/tools.ts` | The tools your agent can use. This is the file you will edit most. |
-| `agent/agent.ts` | The agent loop that communicates with Gemini. |
-| `agent/wallet.ts` | The agent wallet, payment signing, and payment verification. |
-| `app/page.tsx` | The page: setup steps, tools list, and chat. |
-| `app/api/agent/route.ts` | The server endpoint that runs the agent. |
-| `app/api/wallet/route.ts` | The server endpoint that creates and reads the agent wallet. |
-| `app/api/weather/route.ts` | The mock paid weather API. |
-| `components/ui/` | Interface components from [shadcn/ui](https://ui.shadcn.com). You do not need to edit these. |
-| `.env` | Your API key and optional settings. |
-| `.agent-wallet.json` | The agent wallet, created when you click Create wallet. Never share this file. |
+| Sayfa API anahtarı istiyor | `.env` içine `GEMINI_API_KEY` ekle, `npm run dev`’i yeniden başlat |
+| Yeni tool hiç kullanılmıyor | `description` alanını daha net yaz, sunucuyu yeniden başlat |
+| Port 3000 dolu | Terminaldeki alternatif portu aç veya `npm run dev -- -p 3001` |
+| Model hatası | Anahtarın geçerli olduğundan emin ol veya `GEMINI_MODEL` değiştir |
 
-## Configuration
-
-All settings live in the `.env` file.
-
-| Variable | Required | Description |
-| :--- | :--- | :--- |
-| `GEMINI_API_KEY` | Yes | Your Gemini API key. |
-| `GEMINI_MODEL` | No | The Gemini model to use. Defaults to `gemini-flash-latest`. |
-| `WALLET_PRIVATE_KEY` | No | Use an existing wallet instead of the Create wallet button. A private key starting with `0x`. When set, it takes priority over `.agent-wallet.json`. |
-
-Restart `npm run dev` after changing any value in `.env`.
-
-## The Agent Wallet
-
-Clicking **Create wallet** generates a new private key and saves it to `.agent-wallet.json`. The file is listed in `.gitignore`, so it is never committed.
-
-Once the wallet exists, the Setup panel shows:
-
-1. The wallet address, with a button to copy it.
-2. The current ETH balance on Base Sepolia, with a refresh button.
-3. A link to view the wallet on the Base Sepolia block explorer.
-4. A link to faucets where you can request free test ETH.
-
-To start again with a new wallet, stop the server, delete `.agent-wallet.json`, restart, and click **Create wallet** again.
-
-To use a wallet you already have, set `WALLET_PRIVATE_KEY` in `.env` instead.
-
-> **Security note:** Only ever use this wallet for testing. Never send real funds to it. Private keys in `.agent-wallet.json` and `.env` are stored as plain text.
-
-## Troubleshooting
-
-| Problem | Solution |
-| :--- | :--- |
-| The page says to add `GEMINI_API_KEY` | Add your key to `.env` and restart `npm run dev`. |
-| The agent never uses my new tool | Make the `description` more specific about when the tool should be used, then restart the server. |
-| The weather tool fails with "no wallet yet" | Click **Create wallet** in the Setup panel, then ask again. |
-| Port 3000 is already in use | Run `npm run dev -- -p 3001` and open that port instead. |
-| A model error appears in the chat | Check that your API key is valid, or set a different model in `GEMINI_MODEL`. |
-
-## Tech Stack
-
-1. [Next.js](https://nextjs.org) for the app and API routes.
-2. [shadcn/ui](https://ui.shadcn.com) and [Tailwind CSS](https://tailwindcss.com) for the interface.
-3. [Google Gen AI SDK](https://www.npmjs.com/package/@google/genai) for Gemini function calling.
-4. [viem](https://viem.sh) for wallet creation, message signing, and reading Base Sepolia.
-
-## License
+## Lisans
 
 MIT
